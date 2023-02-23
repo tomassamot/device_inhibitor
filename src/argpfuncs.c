@@ -22,6 +22,7 @@ static struct argp_option options[] = {
     {"device-id", 'i', "DEVID", 0, "Device id" },
     {"device-secret", 's', "DEVSEC", 0, "Device secret" },
     {"config-file", 'c', "CONF", 0, "Path to configuration file, containing product-id, device-id and device-secret. Overrides product-id, device-id and device-secret. File content needs to be comma-seperated (f.e.: 'p2k3a9923q7gt133,yh3ux75ddxbyb09w,haadzce8wkro7ezw')" },
+    {"daemon", 'D', 0, 0, "Launch program as a background process"},
     { 0 }
 };
 static struct argp argp = { options, parse_opt, args_doc, doc };
@@ -108,6 +109,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 
     case 'c':
       strcpy(arguments->config_file_path, arg);
+      break;
+
+    case 'D':
+      arguments->daemon = 1;
       break;
 
     case ARGP_KEY_ARG:

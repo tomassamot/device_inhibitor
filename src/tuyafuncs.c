@@ -5,6 +5,8 @@
 #include <assert.h>
 #include <time.h>
 #include <string.h>
+#include <sys/sysinfo.h>
+#include <signal.h>
 
 #include <cJSON.h>
 #include <tuya_error_code.h>
@@ -18,7 +20,10 @@ static void on_connected(tuya_mqtt_context_t* context, void* user_data);
 static void on_disconnect(tuya_mqtt_context_t* context, void* user_data);
 static void on_messages(tuya_mqtt_context_t* context, void* user_data, const tuyalink_message_t* msg);
 static void write_message_to_file(char msg[]);
-static void interrupt_handler(int signum);
+static void handle_kill(int signum);
+
+
+
 
 tuya_mqtt_context_t client_instance;
 
@@ -26,18 +31,19 @@ const char *product_id = "";
 const char *device_id = "";
 const char *device_secret = "";
 
-
-int start_tuya_connection(char *recv_product_id, char *recv_device_id, char *recv_device_secret)
+int tuya_connect(char *recv_product_id, char *recv_device_id, char *recv_device_secret)
 {
     product_id = recv_product_id;
     device_id = recv_device_id;
     device_secret = recv_device_secret;
 
+    signal(SIGKILL, handle_kill);
+    signal(SIGTERM, handle_kill);
+    signal(SIGINT, handle_kill);
+
     int ret = OPRT_OK;
 
-    tuya_mqtt_context_t* client = &client_instance;
-
-    ret = tuya_mqtt_init(client, &(const tuya_mqtt_config_t) {
+    ret = tuya_mqtt_init(&client_instance, &(const tuya_mqtt_config_t) {
         .host = "m1.tuyacn.com",
         .port = 8883,
         .cacert = tuya_cacert_pem,
@@ -52,38 +58,33 @@ int start_tuya_connection(char *recv_product_id, char *recv_device_id, char *rec
     });
     assert(ret == OPRT_OK);
 
-    ret = tuya_mqtt_connect(client);
+    ret = tuya_mqtt_connect(&client_instance);
     assert(ret == OPRT_OK);
-
-    for (;;) {
-        // Loop to receive packets, and handles client keepalive
-        tuya_mqtt_loop(client);
-    }
 
     return ret;
 }
+int tuya_loop(char json_msg[])
+{   
+    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Sending RAM information to cloud");
+    tuyalink_thing_property_report(&client_instance, NULL, json_msg);
+
+    int ret = tuya_mqtt_loop(&client_instance);
+    return ret;
+}
+void tuya_disconnect()
+{
+    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Disconnecting from Tuya cloud...");
+    closelog();
+    tuya_mqtt_disconnect(&client_instance);
+    exit(0);
+}
 static void on_connected(tuya_mqtt_context_t* context, void* user_data)
 {
-    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Connection to Tuya Cloud started");
-
-
-    int i = 0;
-    while(i < 2){
-        if (i != 0)
-            sleep(3);
-        syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Sending device property report to cloud");
-
-        tuyalink_thing_data_model_get(context, NULL);
-        tuyalink_thing_desired_get(context, NULL, "[\"switch10\"]");
-        tuyalink_thing_property_report(context, NULL, "{\"power\":{\"value\":1234,\"time\":1631708204231}}");
-        tuyalink_thing_property_report_with_ack(context, NULL, "{\"power\":{\"value\":1234,\"time\":1631708204231}}");
-        i++;
-    }
+    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Connected to Tuya cloud");
 }
 static void on_disconnect(tuya_mqtt_context_t* context, void* user_data)
 {
-    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Disconnecting from Tuya cloud");
-    closelog();
+
 }
 static void on_messages(tuya_mqtt_context_t* context, void* user_data, const tuyalink_message_t* msg)
 {
@@ -116,4 +117,29 @@ static void write_message_to_file(char *msg)
     }
     
     fclose(msg_file);
+}
+static void handle_kill(int signum)
+{
+    // deallocation goes here
+
+    syslog(LOG_INFO, "(TUYA) Request to kill detected");
+    
+    
+    raise(SIGUSR1);
+    tuya_disconnect(&client_instance);
+
+    if(signum == 8){ // SIGKILL
+        signal(SIGKILL, SIG_DFL);
+        raise(SIGKILL);
+    }
+    else if(signum == 15){ // SIGTERM
+        signal(SIGTERM, SIG_DFL);
+        raise(SIGTERM);
+    }
+    else if(signum == 2){ // SIGINT
+        signal(SIGINT, SIG_DFL);
+        raise(SIGINT);
+    }
+
+    
 }

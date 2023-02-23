@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "argp.h": "c",
+        "sysinfo.h": "c"
+    }
+}
