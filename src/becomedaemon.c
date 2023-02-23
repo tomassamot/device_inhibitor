@@ -28,8 +28,6 @@ int become_daemon()
         default: _exit(EXIT_SUCCESS);
     }
 
-    chdir("/");
-
     for (int x = sysconf(_SC_OPEN_MAX); x>=0; x--)
     {
         close (x);

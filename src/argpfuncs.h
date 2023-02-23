@@ -5,9 +5,12 @@
 
 struct arguments
 {
-  char *product_id, *device_id, *device_secret, *config_file_path;
+  char product_id[30];
+  char device_id[30];
+  char device_secret[30];
+  char config_file_path[1024];
 };
 
-void start_parser(int argc, char **argv, struct arguments **arguments);
+void start_parser(int argc, char **argv, struct arguments *arguments);
 
 #endif

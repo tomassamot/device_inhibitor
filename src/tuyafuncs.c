@@ -56,7 +56,7 @@ int start_tuya_connection(char *recv_product_id, char *recv_device_id, char *rec
     assert(ret == OPRT_OK);
 
     for (;;) {
-        // Loop to receive packets, and handles client keepalive 
+        // Loop to receive packets, and handles client keepalive
         tuya_mqtt_loop(client);
     }
 
@@ -103,7 +103,7 @@ static void write_message_to_file(char *msg)
 
     msg_file = fopen(path, "a");
     if(msg_file == NULL){
-        syslog(LOG_ERR, "%s(%s) %s", "TUYA", device_id, "Failed to open received_messages.txt for appending");
+        syslog(LOG_ERR, "%s(%s) %s %s", "TUYA", device_id, "Failed to open received_messages.txt for appending in path:", path);
         return;
     }
 

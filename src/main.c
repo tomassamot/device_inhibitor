@@ -2,43 +2,62 @@
 #include <sys/types.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <signal.h>
+#include <string.h>
 
 #include "argpfuncs.h"
 #include "tuyafuncs.h"
 #include "becomedaemon.h"
 
+static void handle_kill(int signum);
+
+
+struct arguments arguments = { {[0 ... 29] = '\0'}, {[0 ... 29] = '\0'}, {[0 ... 29] = '\0'}, {[0 ... 1023] = '\0'} };
+
 int main(int argc, char** argv)
 {
-    struct arguments *arguments;
-    pid_t pid = getpid();
-    pid_t ppid = getppid();
     int ret;
-
-    arguments->product_id = (char*) malloc(sizeof(char)*30);
-    arguments->device_id = (char*) malloc(sizeof(char)*30);
-    arguments->device_secret = (char*) malloc(sizeof(char)*30);
-    arguments->config_file_path = (char*) malloc(sizeof(char)*60);
 
     start_parser(argc, argv, &arguments);
 
-    /*ret = become_daemon();
+    ret = become_daemon();
     if(ret){
-        syslog(LOG_USER | LOG_ERR, "error starting");
+        syslog(LOG_USER | LOG_ERR, "(TUYA) Error starting daemon");
         closelog();
         return EXIT_FAILURE;
-    }*/
+    }
 
     openlog("mydaemonlog", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
 
     syslog(LOG_INFO, "(TUYA) Daemon started");
-    
-    ret = start_tuya_connection(arguments->product_id, arguments->device_id, arguments->device_secret);
 
-    free(arguments->product_id);
-    free(arguments->device_id);
-    free(arguments->device_secret);
-    free(arguments->config_file_path);
+    signal(SIGKILL, handle_kill);
+    signal(SIGTERM, handle_kill);
+    signal(SIGQUIT, handle_kill);
+    
+    ret = start_tuya_connection(arguments.product_id, arguments.device_id, arguments.device_secret);
+
     closelog();
 
     exit(ret);
+}
+static void handle_kill(int signum)
+{
+    // deallocation goes here
+    
+    syslog(LOG_INFO, "(TUYA) Request to kill detected, stopping program...");
+    closelog();
+
+    if(signum == 8){ // SIGKILL
+        signal(SIGKILL, SIG_DFL);
+        raise(SIGKILL);
+    }
+    else if(signum == 15){ // SIGTERM
+        signal(SIGTERM, SIG_DFL);
+        raise(SIGTERM);
+    }
+    else{
+        signal(SIGINT, SIG_DFL);
+        raise(SIGINT);
+    }
 }

@@ -28,9 +28,9 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 
 
 
-void start_parser(int argc, char **argv, struct arguments **arguments)
+void start_parser(int argc, char **argv, struct arguments *arguments)
 {
-    argp_parse (&argp, argc, argv, 0, 0, *arguments);
+    argp_parse (&argp, argc, argv, 0, 0, arguments);
 }
 
 static void process_config_file(struct arguments **arguments, struct argp_state *state)
@@ -46,7 +46,7 @@ static void process_config_file(struct arguments **arguments, struct argp_state 
 
   config_file = fopen(args->config_file_path, "r");
   if(config_file == NULL){
-    printf("Error: Couldn't open file for reading at given configuration file path\n");
+    printf("Error: Couldn't open file for reading at given configuration file path. Used path: %s\n", args->config_file_path);
     argp_usage(state);
   }
 
@@ -90,24 +90,24 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
   switch (key){
     case 'p':
       if(strcmp(arguments->config_file_path, "") == 0){
-        arguments->product_id = arg;
+        strcpy(arguments->product_id, arg);
       }
       break;
 
     case 'i':
       if(strcmp(arguments->config_file_path, "") == 0){
-        arguments->device_id = arg;
+        strcpy(arguments->device_id, arg);
       }
       break;
 
     case 's':
       if(strcmp(arguments->config_file_path, "") == 0){
-        arguments->device_secret = arg;
+        strcpy(arguments->device_secret, arg);
       }
       break;
 
     case 'c':
-      arguments->config_file_path = arg;
+      strcpy(arguments->config_file_path, arg);
       break;
 
     case ARGP_KEY_ARG:
