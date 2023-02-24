@@ -1,4 +1,4 @@
-BIN:=tuya_test
+BIN:=device_inhibitor
 SRCS:=$(wildcard *.c)
 OBJS:=$(SRCS:.c=.o)
 CPPFLAGS:= -I/home/studentas/Documents/tuya-iot-core-sdk-main/utils -I/home/studentas/Documents/tuya-iot-core-sdk-main/interface -I/home/studentas/Documents/tuya-iot-core-sdk-main/include

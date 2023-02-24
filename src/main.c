@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     start_parser(argc, argv, &arguments);
     printf("Starting...\n");
 
-    openlog("mylog", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
+    openlog("device_inhibitor", LOG_CONS | LOG_PID | LOG_NDELAY, LOG_LOCAL0);
     
     if(arguments.daemon != 0){
         ret = become_daemon();
@@ -52,10 +52,12 @@ int main(int argc, char** argv)
     struct sysinfo info;
     char message[200];
     ret = 0;
+
+    syslog(LOG_INFO, "Sending RAM information to cloud");
     while(ret == 0 && program_is_killed == 0){
         sleep(3);
         if(sysinfo(&info) != 0){
-            syslog(LOG_ERR, "(TUYA) Error: Failed to get system information\n");
+            syslog(LOG_WARNING, "Failed to get system information\n");
             sprintf(message, "{\"free_ram\":%d,\"total_ram\":%d}", 0,0);
         }
         else{

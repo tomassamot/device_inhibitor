@@ -56,16 +56,20 @@ int tuya_connect(char *recv_product_id, char *recv_device_id, char *recv_device_
         .on_disconnect = on_disconnect,
         .on_messages = on_messages
     });
-    assert(ret == OPRT_OK);
+    if( ret != OPRT_OK ) {
+        syslog(LOG_ERR, "Failed to initialize Tuya context");
+    }
+    syslog(LOG_INFO, "Successfully initialized Tuya context");
 
     ret = tuya_mqtt_connect(&client_instance);
-    assert(ret == OPRT_OK);
+    if( ret != OPRT_OK ) {
+        syslog(LOG_ERR, "Failed to start connection with Tuya cloud");
+    }
 
     return ret;
 }
 int tuya_loop(char json_msg[])
 {   
-    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Sending information to cloud");
     tuyalink_thing_property_report(&client_instance, NULL, json_msg);
 
     int ret = tuya_mqtt_loop(&client_instance);
@@ -73,14 +77,14 @@ int tuya_loop(char json_msg[])
 }
 void tuya_disconnect()
 {
-    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Disconnecting from Tuya cloud...");
-    closelog();
     tuya_mqtt_disconnect(&client_instance);
+    syslog(LOG_INFO, "Disconnected from Tuya cloud");
+    closelog();
     tuya_mqtt_deinit(&client_instance);
 }
 static void on_connected(tuya_mqtt_context_t* context, void* user_data)
 {
-    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Connected to Tuya cloud");
+    syslog(LOG_INFO, "Connected to Tuya cloud");
 }
 static void on_disconnect(tuya_mqtt_context_t* context, void* user_data)
 {
@@ -88,7 +92,7 @@ static void on_disconnect(tuya_mqtt_context_t* context, void* user_data)
 }
 static void on_messages(tuya_mqtt_context_t* context, void* user_data, const tuyalink_message_t* msg)
 {
-    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Message received from cloud");
+    syslog(LOG_INFO, "Message received from Tuya cloud");
     write_message_to_file(msg->data_string);
 }
 static void write_message_to_file(char *msg)
@@ -104,11 +108,11 @@ static void write_message_to_file(char *msg)
 
     msg_file = fopen(path, "a");
     if(msg_file == NULL){
-        syslog(LOG_ERR, "%s(%s) %s %s", "TUYA", device_id, "Failed to open received_messages.txt for appending in path:", path);
+        syslog(LOG_WARNING, "Failed to open received_messages.txt for appending in path: %s", path);
         return;
     }
 
-    syslog(LOG_ERR, "%s(%s) %s", "TUYA", device_id, "Saving message in received_messages.txt");
+    syslog(LOG_INFO, "Appending new message in %s", path);
     if(msg == NULL){
         fprintf(msg_file, "%s: %s\n", asctime(timeinfo), "(Empty message)");
     }
@@ -122,6 +126,6 @@ static void handle_kill(int signum)
 {
     // deallocation goes here
 
-    syslog(LOG_INFO, "(TUYA) Request to kill detected");
+    syslog(LOG_INFO, "Request to kill detected");
     raise(SIGUSR1);
 }
