@@ -65,7 +65,7 @@ int tuya_connect(char *recv_product_id, char *recv_device_id, char *recv_device_
 }
 int tuya_loop(char json_msg[])
 {   
-    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Sending RAM information to cloud");
+    syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Sending information to cloud");
     tuyalink_thing_property_report(&client_instance, NULL, json_msg);
 
     int ret = tuya_mqtt_loop(&client_instance);
@@ -76,7 +76,7 @@ void tuya_disconnect()
     syslog(LOG_INFO, "%s(%s) %s", "TUYA", device_id, "Disconnecting from Tuya cloud...");
     closelog();
     tuya_mqtt_disconnect(&client_instance);
-    exit(0);
+    tuya_mqtt_deinit(&client_instance);
 }
 static void on_connected(tuya_mqtt_context_t* context, void* user_data)
 {
@@ -123,23 +123,5 @@ static void handle_kill(int signum)
     // deallocation goes here
 
     syslog(LOG_INFO, "(TUYA) Request to kill detected");
-    
-    
     raise(SIGUSR1);
-    tuya_disconnect(&client_instance);
-
-    if(signum == 8){ // SIGKILL
-        signal(SIGKILL, SIG_DFL);
-        raise(SIGKILL);
-    }
-    else if(signum == 15){ // SIGTERM
-        signal(SIGTERM, SIG_DFL);
-        raise(SIGTERM);
-    }
-    else if(signum == 2){ // SIGINT
-        signal(SIGINT, SIG_DFL);
-        raise(SIGINT);
-    }
-
-    
 }

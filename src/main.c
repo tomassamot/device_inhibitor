@@ -14,6 +14,7 @@ static void handle_kill(int signum);
 
 
 struct arguments arguments = { {[0 ... 29] = '\0'}, {[0 ... 29] = '\0'}, {[0 ... 29] = '\0'}, {[0 ... 1023] = '\0'}, 0 };
+int program_is_killed = 0;
 
 int main(int argc, char** argv)
 {
@@ -41,21 +42,20 @@ int main(int argc, char** argv)
     signal(SIGTERM, handle_kill);
     signal(SIGINT, handle_kill);
     signal(SIGUSR1, handle_kill);
-
     
     ret = tuya_connect(arguments.product_id, arguments.device_id, arguments.device_secret);
     if(ret != 0){
-        printf("Error: Failed to connect, stopping program...\n");
+        syslog(LOG_ERR, "(TUYA) Error: Failed to connect, stopping program...\n");
         return 1;
     }
 
     struct sysinfo info;
     char message[200];
     ret = 0;
-    while(ret == 0){
+    while(ret == 0 && program_is_killed == 0){
         sleep(3);
         if(sysinfo(&info) != 0){
-            printf("Error: Failed to get system information\n");
+            syslog(LOG_ERR, "(TUYA) Error: Failed to get system information\n");
             sprintf(message, "{\"free_ram\":%d,\"total_ram\":%d}", 0,0);
         }
         else{
@@ -66,23 +66,11 @@ int main(int argc, char** argv)
 
     tuya_disconnect();
 
-    exit(ret);
+    return(0);
 }
 static void handle_kill(int signum)
 {
     // deallocation goes here
 
-
-    if(signum == 8){ // SIGKILL (before tuya conncetion)
-        signal(SIGKILL, SIG_DFL);
-        raise(SIGKILL);
-    }
-    else if(signum == 15){ // SIGTERM (before tuya conncetion)
-        signal(SIGTERM, SIG_DFL);
-        raise(SIGTERM);
-    }
-    else if(signum == 2){ // SIGINT (before tuya conncetion)
-        signal(SIGINT, SIG_DFL);
-        raise(SIGINT);
-    }
+    program_is_killed = 1;
 }
