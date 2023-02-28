@@ -27,15 +27,16 @@ static void handle_kill(int signum);
 
 tuya_mqtt_context_t client_instance;
 
-const char *product_id = "";
-const char *device_id = "";
-const char *device_secret = "";
+//const char *product_id = "";
+//const char *device_id = "";
+//const char *device_secret = "";
 
-int tuya_connect(char *recv_product_id, char *recv_device_id, char *recv_device_secret)
+
+int tuya_connect(char *product_id, char *device_id, char *device_secret)
 {
-    product_id = recv_product_id;
-    device_id = recv_device_id;
-    device_secret = recv_device_secret;
+    //product_id = recv_product_id;
+    //device_id = recv_device_id;
+    //device_secret = recv_device_secret;
 
     signal(SIGKILL, handle_kill);
     signal(SIGTERM, handle_kill);
@@ -71,8 +72,9 @@ int tuya_connect(char *recv_product_id, char *recv_device_id, char *recv_device_
 int tuya_loop(char json_msg[])
 {   
     tuyalink_thing_property_report(&client_instance, NULL, json_msg);
-
+    
     int ret = tuya_mqtt_loop(&client_instance);
+
     return ret;
 }
 void tuya_disconnect()
@@ -112,8 +114,8 @@ static void write_message_to_file(char *msg)
         return;
     }
 
-    syslog(LOG_INFO, "Appending new message in %s", path);
     if(msg == NULL){
+        syslog(LOG_WARNING, "Message received was empty");
         fprintf(msg_file, "%s: %s\n", asctime(timeinfo), "(Empty message)");
     }
     else{

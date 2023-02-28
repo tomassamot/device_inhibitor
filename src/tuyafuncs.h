@@ -9,7 +9,7 @@
 #include <tuyalink_core.h>
 
 
-int tuya_connect(char *recv_product_id, char *recv_device_id, char *recv_device_secret);
+int tuya_connect(char *product_id, char *device_id, char *device_secret);
 int tuya_loop(char json_msg[]);
 void tuya_disconnect();
 

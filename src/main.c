@@ -28,24 +28,24 @@ int main(int argc, char** argv)
     if(arguments.daemon != 0){
         ret = become_daemon();
         if(ret){
-            syslog(LOG_USER | LOG_ERR, "(TUYA) Error starting daemon");
+            syslog(LOG_ERR, "Error starting daemon");
             closelog();
             return EXIT_FAILURE;
         }
-        syslog(LOG_INFO, "(TUYA) Daemon started");
+        syslog(LOG_INFO, "Daemon started");
     }
     else{
-        syslog(LOG_INFO, "(TUYA) Program started");
+        syslog(LOG_INFO, "Program started");
     }
 
     signal(SIGKILL, handle_kill);
     signal(SIGTERM, handle_kill);
     signal(SIGINT, handle_kill);
     signal(SIGUSR1, handle_kill);
-    
+
     ret = tuya_connect(arguments.product_id, arguments.device_id, arguments.device_secret);
     if(ret != 0){
-        syslog(LOG_ERR, "(TUYA) Error: Failed to connect, stopping program...\n");
+        syslog(LOG_ERR, "Failed to connect, stopping program...\n");
         return 1;
     }
 
@@ -53,9 +53,9 @@ int main(int argc, char** argv)
     char message[200];
     ret = 0;
 
-    syslog(LOG_INFO, "Sending RAM information to cloud");
+    syslog(LOG_INFO, "Starting to send RAM information to cloud");
     while(ret == 0 && program_is_killed == 0){
-        sleep(3);
+        sleep(5);
         if(sysinfo(&info) != 0){
             syslog(LOG_WARNING, "Failed to get system information\n");
             sprintf(message, "{\"free_ram\":%d,\"total_ram\":%d}", 0,0);
