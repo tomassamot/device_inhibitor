@@ -13,9 +13,9 @@ start_service() {
         
 
 	if [ "$enabled" -eq 1 ]; then
-		config_get productid input_sct 'productid' 'a'
-		config_get deviceid input_sct 'deviceid' 'a'
-		config_get devicesecret input_sct 'devicesecret' 'a'
+		config_get productid input_sct 'productid' ''
+		config_get deviceid input_sct 'deviceid' ''
+		config_get devicesecret input_sct 'devicesecret' ''
 		
 	        procd_open_instance
 	        procd_set_param command /usr/bin/device_inhibitor -p $productid -i $deviceid -s $devicesecret
