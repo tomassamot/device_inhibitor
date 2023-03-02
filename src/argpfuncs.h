@@ -1,8 +1,6 @@
 #ifndef ARGPFUNCS_H
 #define ARGPFUNCS_H
 
-#include <argp.h>
-
 struct arguments
 {
   char product_id[30];

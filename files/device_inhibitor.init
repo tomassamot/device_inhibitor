@@ -1,0 +1,35 @@
+#!/bin/sh /etc/rc.common
+
+USE_PROCD=1
+
+start_service() {
+        local enabled
+        local productid
+        local deviceid
+        local devicesecret
+
+        config_load 'device_inhibitor'
+        config_get enabled input_sct 'enable' '0'
+        
+
+	if [ "$enabled" -eq 1 ]; then
+		config_get productid input_sct 'productid' 'a'
+		config_get deviceid input_sct 'deviceid' 'a'
+		config_get devicesecret input_sct 'devicesecret' 'a'
+		
+	        procd_open_instance
+	        procd_set_param command /usr/bin/device_inhibitor -p $productid -i $deviceid -s $devicesecret
+	        procd_set_param pidfile /var/run/device_inhibitor.pid
+		procd_set_param file /etc/config/device_inhibitor
+        	procd_close_instance
+	fi
+}
+
+service_triggers() {
+	procd_add_reload_trigger "device_inhibitor"
+}
+
+reload_service() {
+	stop
+	start
+}

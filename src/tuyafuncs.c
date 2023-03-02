@@ -5,7 +5,6 @@
 #include <assert.h>
 #include <time.h>
 #include <string.h>
-#include <sys/sysinfo.h>
 #include <signal.h>
 
 #include <cJSON.h>
@@ -27,22 +26,14 @@ static void handle_kill(int signum);
 
 tuya_mqtt_context_t client_instance;
 
-//const char *product_id = "";
-//const char *device_id = "";
-//const char *device_secret = "";
-
 
 int tuya_connect(char *product_id, char *device_id, char *device_secret)
 {
-    //product_id = recv_product_id;
-    //device_id = recv_device_id;
-    //device_secret = recv_device_secret;
+    int ret = OPRT_OK;
 
     signal(SIGKILL, handle_kill);
     signal(SIGTERM, handle_kill);
     signal(SIGINT, handle_kill);
-
-    int ret = OPRT_OK;
 
     ret = tuya_mqtt_init(&client_instance, &(const tuya_mqtt_config_t) {
         .host = "m1.tuyacn.com",
@@ -61,7 +52,7 @@ int tuya_connect(char *product_id, char *device_id, char *device_secret)
         syslog(LOG_ERR, "Failed to initialize Tuya context");
     }
     syslog(LOG_INFO, "Successfully initialized Tuya context");
-
+    
     ret = tuya_mqtt_connect(&client_instance);
     if( ret != OPRT_OK ) {
         syslog(LOG_ERR, "Failed to start connection with Tuya cloud");
@@ -84,6 +75,7 @@ void tuya_disconnect()
     closelog();
     tuya_mqtt_deinit(&client_instance);
 }
+
 static void on_connected(tuya_mqtt_context_t* context, void* user_data)
 {
     syslog(LOG_INFO, "Connected to Tuya cloud");
@@ -126,8 +118,9 @@ static void write_message_to_file(char *msg)
 }
 static void handle_kill(int signum)
 {
+    syslog(LOG_INFO, "Request to kill detected");
     // deallocation goes here
 
-    syslog(LOG_INFO, "Request to kill detected");
+    //
     raise(SIGUSR1);
 }

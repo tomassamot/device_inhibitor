@@ -1,7 +1,10 @@
+#include <stdio.h>
 #include <string.h>
 #include <syslog.h>
 
 #include "argpfuncs.h"
+
+#include <argp.h>
 
 static error_t parse_opt (int key, char *arg, struct argp_state *state);
 static void process_config_file(struct arguments **arguments, struct argp_state *state);
@@ -31,7 +34,7 @@ static struct argp argp = { options, parse_opt, args_doc, doc };
 
 void start_parser(int argc, char **argv, struct arguments *arguments)
 {
-    argp_parse (&argp, argc, argv, 0, 0, arguments);
+    argp_parse(&argp, argc, argv, 0, 0, arguments);
 }
 
 static void process_config_file(struct arguments **arguments, struct argp_state *state)
